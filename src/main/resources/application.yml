@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: fleetos-api
+  datasource:
+    url: jdbc:h2:mem:fleetos;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+server:
+  error:
+    include-message: always
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/fleetos}
+    username: ${DB_USER:fleetos}
+    password: ${DB_PASSWORD:localdev}
