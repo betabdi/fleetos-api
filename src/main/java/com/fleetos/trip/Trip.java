@@ -24,4 +24,5 @@ public class Trip {
  public String getOrigin(){return origin;} public String getDestination(){return destination;}
  public OffsetDateTime getPickupAt(){return pickupAt;} public OffsetDateTime getDeliveryAt(){return deliveryAt;}
  public BigDecimal getFreightRate(){return freightRate;} public TripStatus getStatus(){return status;}
+ public void transitionTo(TripStatus status){this.status=status;}
 }

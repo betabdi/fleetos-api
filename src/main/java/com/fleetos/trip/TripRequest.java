@@ -5,8 +5,8 @@ import jakarta.validation.constraints.*;
 public record TripRequest(
  @NotNull Long vehicleId,
  @NotNull Long driverId,
- @NotBlank String origin,
- @NotBlank String destination,
+ @NotBlank @Size(max=160) String origin,
+ @NotBlank @Size(max=160) String destination,
  @NotNull OffsetDateTime pickupAt,
  @NotNull OffsetDateTime deliveryAt,
- @NotNull @DecimalMin("0.0") BigDecimal freightRate) {}
+ @NotNull @DecimalMin(value="0.0",inclusive=false) BigDecimal freightRate) {}
