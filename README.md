@@ -1,13 +1,16 @@
-# FleetOS API — v0.1
+# FleetOS API — v0.2
 
 A **Java 21 + Spring Boot + PostgreSQL** fleet operations API designed around the workflows of a family-operated box-truck business. **Portfolio MVP: not yet deployed or used in production.** No real company data or customer information is included.
 
-## What's working in v0.1
+## What's working in v0.2
 - Register and list vehicles; look up a vehicle and change its service status.
 - Register and list drivers.
 - Schedule loads/trips with pickup/delivery times, route, and freight rate.
+- Move trips through guarded `PLANNED → IN_PROGRESS → COMPLETED` or cancellation workflows.
+- Preserve an immutable status audit trail, including optional dispatcher notes.
+- Paginate vehicle, driver, and trip collections with a maximum page size of 100.
 - Reject assignments to out-of-service vehicles, inactive drivers, and overlapping driver/truck schedules (basic application-level check).
-- Request validation, consistent HTTP error responses, relational persistence, Flyway migrations, and basic API tests.
+- Request and field-length validation, safe malformed-request errors, relational persistence, additive Flyway migrations, and lifecycle integration tests.
 
 **Not implemented yet:** login, organization isolation, fleet finance, route tracking, maintenance records, UI, live deployment. **Do not expose the API to the public internet or enter private business data:** endpoints have no authentication. The overlap check is not safe against concurrent dispatcher requests; add transactional database locking before operational use.
 
@@ -52,9 +55,17 @@ curl -i -X POST http://localhost:8080/api/v1/trips \
   -d '{"vehicleId":1,"driverId":1,"origin":"Minneapolis, MN","destination":"Chicago, IL","pickupAt":"2027-01-05T08:00:00-06:00","deliveryAt":"2027-01-05T17:00:00-06:00","freightRate":2100.00}'
 
 # View the records
-curl http://localhost:8080/api/v1/vehicles
-curl http://localhost:8080/api/v1/drivers
-curl http://localhost:8080/api/v1/trips
+curl 'http://localhost:8080/api/v1/vehicles?page=0&size=20'
+curl 'http://localhost:8080/api/v1/drivers?page=0&size=20'
+curl 'http://localhost:8080/api/v1/trips?page=0&size=20&sort=pickupAt,asc'
+
+# Start trip 1 and attach an audit note
+curl -i -X PATCH http://localhost:8080/api/v1/trips/1/status \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"IN_PROGRESS","note":"Driver departed terminal"}'
+
+# View trip 1's complete lifecycle history
+curl http://localhost:8080/api/v1/trips/1/history
 ```
 
 ## Architecture
@@ -63,7 +74,7 @@ curl http://localhost:8080/api/v1/trips
 Modules are grouped by domain (`vehicle`, `driver`, `trip`) instead of a single giant controllers/services folder.
 
 ## Roadmap
-- **v0.2**: lifecycle transitions, audit trail, pagination, error hardening, full integration tests.
+- **v0.2 (current)**: lifecycle transitions, audit trail, pagination, error hardening, and lifecycle integration tests.
 - **v0.3**: secured organization accounts and role-based access; tenant isolation tests.
 - **v0.4**: fuel, expenses, maintenance, and profitability calculations.
 - **v0.5**: operational dashboard and deployment with monitoring, backup, and security review.
