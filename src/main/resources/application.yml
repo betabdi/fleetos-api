@@ -18,6 +18,12 @@ spring:
 server:
   error:
     include-message: always
+fleetos:
+  bootstrap:
+    organization-slug: ${FLEETOS_BOOTSTRAP_ORG_SLUG:}
+    organization-name: ${FLEETOS_BOOTSTRAP_ORG_NAME:}
+    credential-name: ${FLEETOS_BOOTSTRAP_CREDENTIAL_NAME:bootstrap-admin}
+    api-key: ${FLEETOS_BOOTSTRAP_API_KEY:}
 ---
 spring:
   config:
