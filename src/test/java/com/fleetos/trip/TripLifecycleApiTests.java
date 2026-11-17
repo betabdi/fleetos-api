@@ -3,6 +3,8 @@ import com.fleetos.driver.Driver;
 import com.fleetos.driver.DriverRepository;
 import com.fleetos.vehicle.Vehicle;
 import com.fleetos.vehicle.VehicleRepository;
+import com.fleetos.security.Organization;
+import com.fleetos.security.OrganizationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,28 +16,29 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 @SpringBootTest @AutoConfigureMockMvc class TripLifecycleApiTests {
  @Autowired MockMvc mvc; @Autowired TripRepository trips; @Autowired TripStatusHistoryRepository history;
- @Autowired VehicleRepository vehicles; @Autowired DriverRepository drivers;
+ @Autowired VehicleRepository vehicles; @Autowired DriverRepository drivers; @Autowired OrganizationRepository organizations;
  private Long tripId;
  @BeforeEach void setUp(){history.deleteAll();trips.deleteAll();vehicles.deleteAll();drivers.deleteAll();
-  Vehicle vehicle=vehicles.save(new Vehicle("MN-LIFE-1","Freightliner","M2",2022,90000L));
-  Driver driver=drivers.save(new Driver("Lifecycle Driver","555-0101"));
-  Trip trip=trips.save(new Trip(vehicle,driver,"Minneapolis","Chicago",java.time.OffsetDateTime.parse("2027-01-05T08:00:00-06:00"),java.time.OffsetDateTime.parse("2027-01-05T16:00:00-06:00"),new java.math.BigDecimal("2100.00")));
+  Organization organization=organizations.findBySlug("legacy").orElseThrow();
+  Vehicle vehicle=vehicles.save(new Vehicle(organization,"MN-LIFE-1","Freightliner","M2",2022,90000L));
+  Driver driver=drivers.save(new Driver(organization,"Lifecycle Driver","555-0101"));
+  Trip trip=trips.save(new Trip(organization,vehicle,driver,"Minneapolis","Chicago",java.time.OffsetDateTime.parse("2027-01-05T08:00:00-06:00"),java.time.OffsetDateTime.parse("2027-01-05T16:00:00-06:00"),new java.math.BigDecimal("2100.00")));
   history.save(new TripStatusHistory(trip,null,TripStatus.PLANNED,"Trip scheduled"));tripId=trip.getId();}
  @Test void followsLifecycleAndRecordsAuditHistory() throws Exception {
-  mvc.perform(patch("/api/v1/trips/{id}/status",tripId).contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"IN_PROGRESS\",\"note\":\"Driver departed\"}"))
+  mvc.perform(patch("/api/v1/trips/{id}/status",tripId).header("X-FleetOS-Api-Key","test-admin-key").contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"IN_PROGRESS\",\"note\":\"Driver departed\"}"))
    .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("IN_PROGRESS"));
-  mvc.perform(patch("/api/v1/trips/{id}/status",tripId).contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"COMPLETED\"}"))
+  mvc.perform(patch("/api/v1/trips/{id}/status",tripId).header("X-FleetOS-Api-Key","test-admin-key").contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"COMPLETED\"}"))
    .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("COMPLETED"));
-  mvc.perform(get("/api/v1/trips/{id}/history",tripId)).andExpect(status().isOk())
+  mvc.perform(get("/api/v1/trips/{id}/history",tripId).header("X-FleetOS-Api-Key","test-admin-key")).andExpect(status().isOk())
    .andExpect(jsonPath("$[0].toStatus").value("PLANNED")).andExpect(jsonPath("$[1].toStatus").value("IN_PROGRESS"))
    .andExpect(jsonPath("$[1].note").value("Driver departed")).andExpect(jsonPath("$[2].toStatus").value("COMPLETED"));
  }
  @Test void rejectsInvalidLifecycleJump() throws Exception {
-  mvc.perform(patch("/api/v1/trips/{id}/status",tripId).contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"COMPLETED\"}"))
+  mvc.perform(patch("/api/v1/trips/{id}/status",tripId).header("X-FleetOS-Api-Key","test-admin-key").contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"COMPLETED\"}"))
    .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("Cannot transition trip from PLANNED to COMPLETED"));
  }
  @Test void rejectsZeroFreightRate() throws Exception {
-  mvc.perform(post("/api/v1/trips").contentType(MediaType.APPLICATION_JSON).content("""
+  mvc.perform(post("/api/v1/trips").header("X-FleetOS-Api-Key","test-admin-key").contentType(MediaType.APPLICATION_JSON).content("""
    {"vehicleId":1,"driverId":1,"origin":"Minneapolis","destination":"Chicago","pickupAt":"2027-01-05T08:00:00-06:00","deliveryAt":"2027-01-05T16:00:00-06:00","freightRate":0}
    """)).andExpect(status().isBadRequest());
  }

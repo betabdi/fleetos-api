@@ -1,0 +1,9 @@
+fleetos:
+  bootstrap:
+    organization-slug: legacy
+    organization-name: Test Fleet
+    credential-name: test-admin
+    api-key: test-admin-key
+spring:
+  jpa:
+    open-in-view: false

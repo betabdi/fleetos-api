@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
   String body=""" 
     {"plate":"MN-TEST-431","make":"Isuzu","model":"NPR","year":2021,"odometerMiles":120000}
     """;
-  mvc.perform(post("/api/v1/vehicles").contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isCreated());
-  mvc.perform(post("/api/v1/vehicles").contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isConflict());
+  mvc.perform(post("/api/v1/vehicles").header("X-FleetOS-Api-Key","test-admin-key").contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isCreated());
+  mvc.perform(post("/api/v1/vehicles").header("X-FleetOS-Api-Key","test-admin-key").contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isConflict());
  }
 }
